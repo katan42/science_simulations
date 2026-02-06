@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Formula Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .question-box {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .ions-display {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .ion {
+            display: inline-block;
+            margin: 10px 15px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .cation {
+            color: #e74c3c;
+        }
+
+        .anion {
+            color: #3498db;
+        }
+
+        .compound-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 15px;
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        #formulaInput {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3em;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            font-family: monospace;
+            transition: border-color 0.3s;
+        }
+
+        #formulaInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .hint {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .skip-btn {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .skip-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .new-game-btn {
+            background: #2ecc71;
+            color: white;
+            width: 100%;
+        }
+
+        .new-game-btn:hover {
+            background: #27ae60;
+        }
+
+        .feedback {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .feedback.hidden {
+            display: none;
+        }
+
+        .explanation {
+            margin-top: 10px;
+            font-size: 0.95em;
+            font-weight: normal;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .subscript {
+            font-size: 0.7em;
+            vertical-align: sub;
+        }
+
+        .superscript {
+            font-size: 0.7em;
+            vertical-align: super;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>⚗️ Chemical Formula Challenge</h1>
+        <p class="subtitle">N Level Cambridge Chemistry Practice</p>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Streak</div>
+                <div class="stat-value" id="streak">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="total">0</div>
+            </div>
+        </div>
+
+        <div class="question-box">
+            <div class="ions-display">
+                <div>
+                    <span class="ion cation" id="cationDisplay"></span>
+                    <span style="font-size: 1.5em;">+</span>
+                    <span class="ion anion" id="anionDisplay"></span>
+                </div>
+            </div>
+            <div class="compound-name" id="compoundName"></div>
+        </div>
+
+        <div class="feedback hidden" id="feedback"></div>
+
+        <div class="input-section">
+            <label class="input-label" for="formulaInput">Enter the chemical formula:</label>
+            <input type="text" id="formulaInput" placeholder="e.g., MgCl₂" autocomplete="off">
+            <div class="hint">💡 Use numbers for subscripts (e.g., H2O, Ca3PO4). Use brackets for polyatomic ions with subscript > 1 (e.g., Mg(NO3)2)</div>
+        </div>
+
+        <div class="button-group">
+            <button class="submit-btn" id="submitBtn">Check Answer</button>
+            <button class="skip-btn" id="skipBtn">Skip</button>
+        </div>
+
+        <button class="new-game-btn" id="newGameBtn" style="display: none;">New Game</button>
+    </div>
+
+    <script>
+        // Ion data for N level Cambridge
+        const cations = [
+            { name: 'sodium', symbol: 'Na', charge: 1 },
+            { name: 'potassium', symbol: 'K', charge: 1 },
+            { name: 'silver', symbol: 'Ag', charge: 1 },
+            { name: 'lithium', symbol: 'Li', charge: 1 },
+            { name: 'magnesium', symbol: 'Mg', charge: 2 },
+            { name: 'calcium', symbol: 'Ca', charge: 2 },
+            { name: 'barium', symbol: 'Ba', charge: 2 },
+            { name: 'zinc', symbol: 'Zn', charge: 2 },
+            { name: 'copper(II)', symbol: 'Cu', charge: 2 },
+            { name: 'iron(II)', symbol: 'Fe', charge: 2 },
+            { name: 'lead(II)', symbol: 'Pb', charge: 2 },
+            { name: 'aluminium', symbol: 'Al', charge: 3 },
+            { name: 'iron(III)', symbol: 'Fe', charge: 3 },
+            { name: 'ammonium', symbol: 'NH4', charge: 1 }
+        ];
+
+        const anions = [
+            { name: 'chloride', symbol: 'Cl', charge: 1 },
+            { name: 'bromide', symbol: 'Br', charge: 1 },
+            { name: 'iodide', symbol: 'I', charge: 1 },
+            { name: 'fluoride', symbol: 'F', charge: 1 },
+            { name: 'hydroxide', symbol: 'OH', charge: 1 },
+            { name: 'nitrate', symbol: 'NO3', charge: 1 },
+            { name: 'oxide', symbol: 'O', charge: 2 },
+            { name: 'sulfide', symbol: 'S', charge: 2 },
+            { name: 'sulfate', symbol: 'SO4', charge: 2 },
+            { name: 'carbonate', symbol: 'CO3', charge: 2 },
+            { name: 'phosphate', symbol: 'PO4', charge: 3 },
+            { name: 'nitride', symbol: 'N', charge: 3 }
+        ];
+
+        let currentCation, currentAnion, correctFormula;
+        let score = 0, streak = 0, total = 0;
+        let wrongAnswers = []; // Queue to store wrong answers for repetition
+        const MAX_WRONG_QUEUE = 3; // Maximum number of wrong answers to keep in queue
+
+        function addToWrongAnswers(cation, anion) {
+            // Check if this combination already exists in the queue
+            const exists = wrongAnswers.some(q => 
+                q.cation.symbol === cation.symbol && q.anion.symbol === anion.symbol
+            );
+            
+            if (!exists) {
+                wrongAnswers.push({ cation, anion, attempts: 0 });
+                // Keep only the most recent wrong answers
+                if (wrongAnswers.length > MAX_WRONG_QUEUE) {
+                    wrongAnswers.shift(); // Remove oldest
+                }
+            }
+        }
+
+        function getRandomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        function isPolyatomic(symbol) {
+            // Polyatomic ions contain more than one element (more than one capital letter or contains lowercase)
+            const capitals = symbol.match(/[A-Z]/g);
+            return capitals && capitals.length > 1;
+        }
+
+        function generateFormula(cation, anion) {
+            const divisor = gcd(cation.charge, anion.charge);
+            const cationCount = anion.charge / divisor;
+            const anionCount = cation.charge / divisor;
+
+            let formula = '';
+            
+            // Handle cation
+            if (isPolyatomic(cation.symbol) && cationCount > 1) {
+                formula += '(' + cation.symbol + ')' + cationCount;
+            } else {
+                formula += cation.symbol;
+                if (cationCount > 1) formula += cationCount;
+            }
+
+            // Handle anion
+            // Add parentheses for polyatomic ions if count > 1
+            if (isPolyatomic(anion.symbol) && anionCount > 1) {
+                formula += '(' + anion.symbol + ')' + anionCount;
+            } else {
+                formula += anion.symbol;
+                if (anionCount > 1) formula += anionCount;
+            }
+
+            return formula;
+        }
+
+        function formatIonDisplay(symbol, charge) {
+            const chargeStr = charge > 1 ? charge + '+' : (charge < -1 ? Math.abs(charge) + '−' : (charge === 1 ? '+' : '−'));
+            return `${symbol}<span class="superscript">${chargeStr}</span>`;
+        }
+
+        function toSubscript(str) {
+            const subscriptMap = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
+            return str.replace(/\d/g, digit => subscriptMap[digit] || digit);
+        }
+
+        function normalizeFormula(formula) {
+            // Convert subscript numbers to regular numbers
+            let normalized = formula.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, char => {
+                return '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(char)];
+            }).replace(/\s/g, '');
+            
+            return normalized;
+        }
+
+        function checkBrackets(userFormula, correctFormula) {
+            // Check if brackets are needed and correctly placed
+            const userHasBrackets = userFormula.includes('(') && userFormula.includes(')');
+            const correctHasBrackets = correctFormula.includes('(') && correctFormula.includes(')');
+            
+            return userHasBrackets === correctHasBrackets;
+        }
+
+        function newQuestion() {
+            // 60% chance to repeat a wrong answer if available, after the first question
+            const shouldRepeatWrong = wrongAnswers.length > 0 && total > 0 && Math.random() < 0.6;
+            
+            if (shouldRepeatWrong) {
+                // Get a wrong answer from the queue
+                const wrongQuestion = wrongAnswers[Math.floor(Math.random() * wrongAnswers.length)];
+                currentCation = wrongQuestion.cation;
+                currentAnion = wrongQuestion.anion;
+                wrongQuestion.attempts++;
+            } else {
+                // Generate a new random question
+                currentCation = getRandomElement(cations);
+                currentAnion = getRandomElement(anions);
+            }
+            
+            correctFormula = generateFormula(currentCation, currentAnion);
+
+            document.getElementById('cationDisplay').innerHTML = formatIonDisplay(currentCation.symbol, currentCation.charge);
+            document.getElementById('anionDisplay').innerHTML = formatIonDisplay(currentAnion.symbol, -currentAnion.charge);
+            document.getElementById('compoundName').textContent = currentCation.name + ' ' + currentAnion.name;
+            document.getElementById('formulaInput').value = '';
+            
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback hidden';
+            feedback.innerHTML = '';
+            
+            document.getElementById('formulaInput').focus();
+        }
+
+        function checkAnswer() {
+            const userAnswer = normalizeFormula(document.getElementById('formulaInput').value);
+            const normalized = normalizeFormula(correctFormula);
+            const feedback = document.getElementById('feedback');
+
+            total++;
+
+            if (userAnswer === normalized) {
+                score++;
+                streak++;
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `✓ Correct! The formula is ${toSubscript(correctFormula)}`;
+                
+                // Remove from wrong answers queue if it was there
+                wrongAnswers = wrongAnswers.filter(q => 
+                    q.cation.symbol !== currentCation.symbol || q.anion.symbol !== currentAnion.symbol
+                );
+                
+                if (streak === 5) {
+                    setTimeout(() => {
+                        showGameOver();
+                    }, 2000);
+                } else {
+                    setTimeout(() => {
+                        newQuestion();
+                    }, 2000);
+                }
+            } else {
+                streak = 0;
+                feedback.className = 'feedback incorrect';
+                
+                let explanation = getDetailedExplanation(userAnswer, normalized);
+                
+                feedback.innerHTML = `✗ Incorrect. ${explanation}`;
+                
+                // Add to wrong answers queue for repetition
+                addToWrongAnswers(currentCation, currentAnion);
+                
+                setTimeout(() => {
+                    newQuestion();
+                }, 20000);
+            }
+
+            updateStats();
+        }
+
+        function getDetailedExplanation(userAnswer, correctAnswer) {
+            const divisor = gcd(currentCation.charge, currentAnion.charge);
+            const cationCount = currentAnion.charge / divisor;
+            const anionCount = currentCation.charge / divisor;
+
+            let explanation = `The correct formula is ${toSubscript(correctFormula)}<br>`;
+            explanation += `<div class="explanation">`;
+            
+            if (userAnswer === '') {
+                explanation += `You didn't enter an answer!<br><br>`;
+            }
+            
+            // Check for specific mistakes
+            let mistakeFound = false;
+            
+            // Check for coefficient error (e.g., 2KSO4 instead of K2SO4)
+            if (/^\d/.test(userAnswer)) {
+                explanation += `<strong>❌ Coefficient Error!</strong><br>`;
+                explanation += `• You wrote a number in FRONT of the formula (like 2KSO₄)<br>`;
+                explanation += `• This number is called a coefficient and means "2 separate molecules"<br>`;
+                explanation += `• You need a SUBSCRIPT instead (like K₂SO₄) to show atoms bonded together<br>`;
+                explanation += `• Coefficient = separate molecules, Subscript = bonded atoms in ONE molecule<br><br>`;
+                mistakeFound = true;
+            }
+            
+            // Check for capitalization errors
+            if (!mistakeFound && userAnswer.toLowerCase() === correctAnswer.toLowerCase() && userAnswer !== correctAnswer) {
+                explanation += `<strong>❌ Capitalization Error!</strong><br>`;
+                explanation += `• Chemical symbols must use correct capitalization<br>`;
+                explanation += `• First letter is UPPERCASE, second letter (if any) is lowercase<br>`;
+                explanation += `• Example: Na (not na or NA), Cl (not cl or CL), Mg (not mg or MG)<br><br>`;
+                mistakeFound = true;
+            }
+            
+            // Check for bracket mistakes
+            const userNoBrackets = userAnswer.replace(/[()]/g, '');
+            const correctNoBrackets = correctAnswer.replace(/[()]/g, '');
+            
+            if (!mistakeFound && userNoBrackets === correctNoBrackets && userAnswer !== correctAnswer) {
+                if (correctAnswer.includes('(') && !userAnswer.includes('(')) {
+                    explanation += `<strong>❌ Missing Brackets!</strong><br>`;
+                    explanation += `• Polyatomic ions need brackets when subscript > 1<br>`;
+                    explanation += `• "${isPolyatomic(currentAnion.symbol) ? currentAnion.symbol : currentCation.symbol}" is a polyatomic ion (multiple elements)<br>`;
+                    explanation += `• When you need more than one, use brackets: (${isPolyatomic(currentAnion.symbol) ? currentAnion.symbol : currentCation.symbol})${toSubscript((anionCount > 1 ? anionCount : cationCount).toString())}<br><br>`;
+                    mistakeFound = true;
+                } else if (!correctAnswer.includes('(') && userAnswer.includes('(')) {
+                    explanation += `<strong>❌ Unnecessary Brackets!</strong><br>`;
+                    explanation += `• Only polyatomic ions (multiple elements) need brackets<br>`;
+                    explanation += `• Single element ions like Cl, O, Fe don't need brackets<br>`;
+                    explanation += `• Example: FeCl₂ (not Fe(Cl)₂) because Cl is just one element<br><br>`;
+                    mistakeFound = true;
+                }
+            }
+            
+            // Check for wrong subscripts
+            if (!mistakeFound && userAnswer.replace(/\d/g, '') === correctAnswer.replace(/\d/g, '')) {
+                explanation += `<strong>❌ Wrong Subscripts!</strong><br>`;
+                explanation += `• The numbers (subscripts) are incorrect<br>`;
+                explanation += `• You need to balance the charges correctly<br><br>`;
+                mistakeFound = true;
+            }
+            
+            if (!mistakeFound && userAnswer !== '') {
+                explanation += `<strong>You wrote:</strong> ${toSubscript(userAnswer)}<br><br>`;
+            }
+            
+            // Always show the charge balancing explanation
+            explanation += `<strong>Charge Balancing:</strong><br>`;
+            explanation += `• ${currentCation.name} → ${currentCation.symbol}<span class="superscript">${currentCation.charge}+</span><br>`;
+            explanation += `• ${currentAnion.name} → ${currentAnion.symbol}<span class="superscript">${currentAnion.charge}−</span><br>`;
+            explanation += `• To balance charges: need ${cationCount} ${currentCation.symbol} and ${anionCount} ${currentAnion.symbol}<br>`;
+            explanation += `• Total positive: ${cationCount} × ${currentCation.charge}+ = ${cationCount * currentCation.charge}+<br>`;
+            explanation += `• Total negative: ${anionCount} × ${currentAnion.charge}− = ${anionCount * currentAnion.charge}−<br>`;
+            
+            if (isPolyatomic(currentAnion.symbol) && anionCount > 1) {
+                explanation += `• Polyatomic ion "${currentAnion.symbol}" needs brackets: (${currentAnion.symbol})${toSubscript(anionCount.toString())}`;
+            } else if (isPolyatomic(currentCation.symbol) && cationCount > 1) {
+                explanation += `• Polyatomic ion "${currentCation.symbol}" needs brackets: (${currentCation.symbol})${toSubscript(cationCount.toString())}`;
+            }
+            
+            explanation += `</div>`;
+            return explanation;
+        }
+
+        function showGameOver() {
+            const container = document.querySelector('.game-container');
+            container.innerHTML = `
+                <h1 style="color: #2ecc71;">🎉 Congratulations!</h1>
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 4em; margin: 20px 0;">🏆</div>
+                    <h2 style="color: #333; margin-bottom: 20px;">You achieved a 5-question streak!</h2>
+                    <div class="stats" style="margin: 30px 0;">
+                        <div class="stat">
+                            <div class="stat-label">Final Score</div>
+                            <div class="stat-value" style="color: #2ecc71;">${score}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Attempted</div>
+                            <div class="stat-value" style="color: #2ecc71;">${total}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Accuracy</div>
+                            <div class="stat-value" style="color: #2ecc71;">${Math.round((score/total)*100)}%</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 1.2em; color: #666; margin: 20px 0;">Excellent work on mastering chemical formulas!</p>
+                    <button class="new-game-btn" onclick="location.reload()">Play Again</button>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('streak').textContent = streak;
+            document.getElementById('total').textContent = total;
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+        document.getElementById('skipBtn').addEventListener('click', () => {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback incorrect';
+            feedback.innerHTML = `Skipped. The correct formula is ${toSubscript(correctFormula)}`;
+            total++;
+            streak = 0;
+            updateStats();
+            setTimeout(() => {
+                newQuestion();
+            }, 2000);
+        });
+
+        document.getElementById('formulaInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        // Initialize game
+        newQuestion();
+    </script>
+</body>
+</html>
