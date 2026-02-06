@@ -28,7 +28,7 @@
 <h1>📚 Interactive Science Simulations</h1>
 <p>Select a topic below:</p>
 
-<a href="[chemistry-formula-game.html](https://katan42.github.io/science_simulations/chemistry-formula-game.html)">Chemical Formula</a>
+<a href="(https://katan42.github.io/science_simulations/chemistry-formula-game.html)">Chemical Formula</a>
 
 
 placeholder fluff
