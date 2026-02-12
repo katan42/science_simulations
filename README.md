@@ -28,8 +28,8 @@
 <h1>📚 Interactive Science Simulations</h1>
 <p>Select a topic below:</p>
 
-<a href="https://katan42.github.io/science_simulations/chemistry-formula-game.html">Chemical Formula</a>
-
+<a href="https://katan42.github.io/science_simulations/chemistry-formula-game-2.html">Chemical Formula</a>
+(version 2 added second level, timer, sound effects)
 
 placeholder fluff
 <h2>⚙ Physics</h2>
