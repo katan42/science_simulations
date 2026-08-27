@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Specimen Bench — N-Level Biology Revision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1B2B20;
+    --paper: #EFF2EB;
+    --paper-raised: #F8FAF6;
+    --green-deep: #234433;
+    --sage: #7C9A82;
+    --sage-dim: #C4D2C5;
+    --amber: #C98A3E;
+    --amber-soft: #F2DFC0;
+    --rust: #B5573F;
+    --rust-soft: #F1D9D2;
+    --line: #D3D9CE;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+  .masthead{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid var(--green-deep);
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .masthead h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 30px;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--green-deep);
+  }
+  .masthead p{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin: 4px 0 0;
+  }
+  .score{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--green-deep);
+    text-align: right;
+    line-height: 1.5;
+  }
+  .score b{ font-size: 18px; }
+
+  .controls{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  select, button{
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink);
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  select{ flex: 1; min-width: 200px; }
+  button.primary{
+    background: var(--green-deep);
+    color: var(--paper-raised);
+    border-color: var(--green-deep);
+    font-weight: 600;
+  }
+  button.primary:hover{ background: #1a3527; }
+  button:hover{ border-color: var(--sage); }
+
+  .slip{
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 26px 26px 22px;
+    position: relative;
+  }
+  .slip::before{
+    content: attr(data-tag);
+    position: absolute;
+    top: -11px;
+    left: 22px;
+    background: var(--amber);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 2px;
+  }
+  .prompt{
+    font-family: 'Fraunces', serif;
+    font-size: 21px;
+    line-height: 1.4;
+    margin: 10px 0 18px;
+    color: var(--ink);
+  }
+  textarea{
+    width: 100%;
+    min-height: 96px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 12px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    background: #fff;
+    resize: vertical;
+    color: var(--ink);
+  }
+  textarea:focus, select:focus, button:focus{
+    outline: 2px solid var(--sage);
+    outline-offset: 1px;
+  }
+  .actions{
+    display:flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .feedback{
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line);
+    display: none;
+  }
+  .feedback.show{ display: block; }
+  .tally{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 10px;
+  }
+  .tags{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .tag{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 5px 10px;
+    border-radius: 2px;
+    border: 1px solid transparent;
+  }
+  .tag.hit{
+    background: var(--amber-soft);
+    border-color: var(--amber);
+    color: #6b4415;
+  }
+  .tag.hit::before{ content: "\25CF  "; color: var(--amber); }
+  .tag.miss{
+    background: var(--rust-soft);
+    border-color: var(--rust);
+    color: #7a3323;
+  }
+  .tag.miss::before{ content: "\25CB  "; color: var(--rust); }
+  .model{
+    background: #F4F6F1;
+    border-left: 3px solid var(--sage);
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    border-radius: 0 3px 3px 0;
+  }
+  .model b{
+    display:block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sage);
+    margin-bottom: 6px;
+  }
+  footer{
+    text-align:center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--sage);
+    margin-top: 30px;
+    letter-spacing: 0.04em;
+  }
+  @media (max-width: 480px){
+    .masthead{ flex-direction: column; align-items: flex-start; }
+    .score{ text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>Specimen Bench</h1>
+      <p>N-Level Science (Biology) &middot; Open-recall practice</p>
+    </div>
+    <div class="score">
+      Answered <b id="scoreAnswered">0</b><br>
+      Avg. hit rate <b id="scoreAvg">–</b>
+    </div>
+  </div>
+
+  <div class="controls">
+    <select id="topicSelect"></select>
+    <button id="shuffleBtn">Shuffle</button>
+  </div>
+
+  <div class="slip" id="slip" data-tag="SPECIMEN 01 / 8">
+    <div class="prompt" id="promptText"></div>
+    <textarea id="answerInput" placeholder="Type your answer in your own words, then check it against the key phrases the syllabus expects..."></textarea>
+    <div class="actions">
+      <button class="primary" id="checkBtn">Check my answer</button>
+      <button id="revealBtn">Reveal model answer</button>
+      <button id="nextBtn">Next question →</button>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <div class="tally" id="tally"></div>
+      <div class="tags" id="tags"></div>
+      <div class="model">
+        <b>Model answer</b>
+        <span id="modelText"></span>
+      </div>
+    </div>
+  </div>
+
+  <footer>Type your own phrasing — the checker looks for the underlying idea, not exact words.</footer>
+</div>
+
+<script>
+const QUESTIONS = [
+  // 1. Cell Structure and Organisation
+  {topic:"1. Cell Structure & Organisation", prompt:"State the function of the cell membrane.",
+   keywords:[["control","regulate"],["movement"],["in and out","into and out","enter and leave","enters and leaves"]],
+   model:"Controls the movement of substances into and out of the cell (it is selectively/partially permeable)."},
+  {topic:"1. Cell Structure & Organisation", prompt:"State the function of the nucleus.",
+   keywords:[["genetic material","dna","chromosome"],["control","controls"],["activities","metabolism"]],
+   model:"Contains the genetic material (DNA) and controls the cell's activities."},
+  {topic:"1. Cell Structure & Organisation", prompt:"Compare the vacuole of a plant cell with that of an animal cell.",
+   keywords:[["large","permanent"],["sap","cell sap"],["small","temporary"]],
+   model:"A plant cell has one large, permanent, sap-filled vacuole; an animal cell has small, temporary vacuoles."},
+  {topic:"1. Cell Structure & Organisation", prompt:"Explain why muscle cells contain many mitochondria.",
+   keywords:[["many mitochondria","more mitochondria"],["energy","atp"],["contraction","respire","respiration"]],
+   model:"Muscle cells need to contract, so they contain many mitochondria to release more energy through aerobic respiration."},
+  {topic:"1. Cell Structure & Organisation", prompt:"Explain how a root hair cell is adapted for its function.",
+   keywords:[["large surface area","surface area"],["absorption","absorb"],["water","ions","minerals"]],
+   model:"A root hair cell has a large surface area of cell membrane, increasing the absorption of water and mineral ions."},
+  {topic:"1. Cell Structure & Organisation", prompt:"Explain why a red blood cell has no nucleus.",
+   keywords:[["no nucleus","lack a nucleus","without a nucleus","lacks a nucleus"],["more space","more room"],["oxygen","haemoglobin"]],
+   model:"The lack of a nucleus creates more space for haemoglobin, allowing the cell to transport more oxygen."},
+
+  // 2. Movement of Substances
+  {topic:"2. Movement of Substances", prompt:"Define diffusion.",
+   keywords:[["net movement"],["high","low concentration","concentration gradient"],["particles","molecules"],["no energy","without energy","passive"]],
+   model:"The net movement of particles from a region of high concentration to a region of low concentration (down a concentration gradient), without the use of energy."},
+  {topic:"2. Movement of Substances", prompt:"Define osmosis.",
+   keywords:[["water molecules","water"],["higher water potential","lower water potential","water potential"],["partially permeable","selectively permeable"]],
+   model:"The movement of water molecules from a region of higher water potential to a region of lower water potential through a partially permeable membrane."},
+  {topic:"2. Movement of Substances", prompt:"Explain what happens to a plant cell placed in a concentrated salt solution.",
+   keywords:[["water leaves","loses water"],["plasmolysis","shrink","shrinks"],["flaccid"]],
+   model:"Water leaves the cell by osmosis, the cytoplasm shrinks away from the cell wall (plasmolysis), and the cell becomes flaccid."},
+
+  // 3. Biological Molecules
+  {topic:"3. Biological Molecules", prompt:"State the main role of fats in the body.",
+   keywords:[["insulation"],["long-term","long term","storage"],["energy"]],
+   model:"Fats provide insulation and act as a long-term store of energy."},
+  {topic:"3. Biological Molecules", prompt:"Describe the test and positive result for a reducing sugar.",
+   keywords:[["benedict"],["heat","boil","water bath"],["brick red","brick-red","orange precipitate"]],
+   model:"Add Benedict's solution and heat; a brick-red precipitate forms if a reducing sugar is present."},
+  {topic:"3. Biological Molecules", prompt:"Describe the test and positive result for protein.",
+   keywords:[["biuret"],["purple","lilac","violet"]],
+   model:"Add biuret solution; a purple/lilac colour indicates the presence of protein."},
+  {topic:"3. Biological Molecules", prompt:"Explain enzyme specificity using the 'lock and key' idea.",
+   keywords:[["active site"],["substrate"],["complementary","specific shape","lock and key"]],
+   model:"An enzyme's active site has a shape complementary to one specific substrate (like a lock and key), forming an enzyme-substrate complex."},
+  {topic:"3. Biological Molecules", prompt:"Explain why enzyme activity drops at temperatures above the optimum.",
+   keywords:[["denature","denatured"],["active site"],["change shape","lose its shape","loses its shape"]],
+   model:"The enzyme's active site changes shape (denatures) and can no longer bind its substrate, so the reaction rate falls."},
+
+  // 4. Nutrition in Humans
+  {topic:"4. Nutrition in Humans", prompt:"State the function of the hepatic portal vein.",
+   keywords:[["nutrient","absorbed food","digested food"],["small intestine"],["liver"]],
+   model:"It carries blood rich in absorbed nutrients from the small intestine to the liver."},
+  {topic:"4. Nutrition in Humans", prompt:"State two functions of the liver.",
+   keywords:[["glycogen"],["urea","deamination"],["detox","alcohol","breakdown hormones","breaks down"]],
+   model:"The liver converts glucose to glycogen (and back), converts excess amino acids into urea, and breaks down alcohol and hormones."},
+  {topic:"4. Nutrition in Humans", prompt:"Explain how insulin and glucagon regulate blood glucose concentration.",
+   keywords:[["insulin"],["glucagon"],["lower","decrease","decreases"],["raise","increase","increases"]],
+   model:"Insulin lowers blood glucose (glucose → glycogen); glucagon raises blood glucose (glycogen → glucose)."},
+  {topic:"4. Nutrition in Humans", prompt:"Describe type 2 diabetes mellitus.",
+   keywords:[["insulin resistance","resistant to insulin"],["persistently high","high blood glucose"],["insufficient insulin","not enough insulin"]],
+   model:"A condition where blood glucose concentration is persistently higher than normal, due to the body's resistance to insulin or insufficient insulin production."},
+
+  // 5. Transport in Humans
+  {topic:"5. Transport in Humans", prompt:"Why do arteries have thick, muscular, elastic walls?",
+   keywords:[["high pressure","pressure"],["withstand","stretch"],["thick","elastic"]],
+   model:"Arteries carry blood at high pressure, so their thick, muscular and elastic walls withstand and accommodate this pressure."},
+  {topic:"5. Transport in Humans", prompt:"State the function of red blood cells.",
+   keywords:[["haemoglobin"],["oxygen","transport","carry"]],
+   model:"Red blood cells contain haemoglobin, which binds to and transports oxygen around the body."},
+  {topic:"5. Transport in Humans", prompt:"State the function of platelets.",
+   keywords:[["fibrinogen"],["fibrin"],["clot","clotting"]],
+   model:"Platelets help convert fibrinogen into fibrin, causing the blood to clot."},
+  {topic:"5. Transport in Humans", prompt:"Describe coronary heart disease.",
+   keywords:[["occlusion","blockage","narrowing","blocked"],["coronary artery","coronary arteries"]],
+   model:"The occlusion (blockage/narrowing) of the coronary arteries, often caused by an unhealthy diet, sedentary lifestyle or smoking."},
+
+  // 6. Respiration in Humans
+  {topic:"6. Respiration in Humans", prompt:"Explain how the alveolus is adapted for gaseous exchange.",
+   keywords:[["thin wall","thin walls","thin"],["large surface area","surface area"],["moist"],["capillaries","capillary network"]],
+   model:"Alveoli have thin walls, a large surface area, a moist lining, and are surrounded by a dense network of capillaries — all of which speed up gas diffusion."},
+  {topic:"6. Respiration in Humans", prompt:"State the word equation for aerobic respiration.",
+   keywords:[["glucose"],["oxygen"],["carbon dioxide"],["water"],["energy"]],
+   model:"Glucose + oxygen → carbon dioxide + water (+ energy)."},
+  {topic:"6. Respiration in Humans", prompt:"State the word equation for anaerobic respiration in human cells.",
+   keywords:[["glucose"],["lactic acid"],["energy"]],
+   model:"Glucose → lactic acid (+ energy)."},
+  {topic:"6. Respiration in Humans", prompt:"Explain why rapid, deep breathing continues after vigorous exercise.",
+   keywords:[["oxygen debt"],["lactic acid"],["break down","remove","oxidise","oxidize"]],
+   model:"Vigorous exercise causes cells to respire anaerobically, building up lactic acid and an oxygen debt; rapid, deep breathing after exercise supplies oxygen to break down this lactic acid."},
+
+  // 7. Infectious Diseases in Humans
+  {topic:"7. Infectious Diseases", prompt:"What is a pathogen?",
+   keywords:[["bacteria","virus","bacterium","microorganism"],["cause disease","causes disease","disease-causing"]],
+   model:"A disease-causing organism, such as a bacterium or a virus."},
+  {topic:"7. Infectious Diseases", prompt:"Explain how vaccines prevent infectious disease.",
+   keywords:[["resembles","similar to","resembling"],["white blood cells"],["antibodies"]],
+   model:"A vaccine contains an agent that resembles a pathogen, stimulating white blood cells to quickly produce antibodies when the actual pathogen invades."},
+  {topic:"7. Infectious Diseases", prompt:"Why are antibiotics ineffective against viruses?",
+   keywords:[["kill bacteria"],["not viruses","ineffective against viruses","don't work"]],
+   model:"Antibiotics kill bacteria but do not affect viruses, so they cannot treat viral infections."},
+  {topic:"7. Infectious Diseases", prompt:"Explain how misuse of antibiotics leads to antibiotic-resistant bacteria.",
+   keywords:[["resistant bacteria","antibiotic-resistant"],["survive","selection","surviving"],["overuse","misuse"]],
+   model:"Misuse/overuse of antibiotics kills non-resistant bacteria, leaving resistant bacteria to survive and multiply, accelerating the spread of antibiotic resistance."},
+
+  // 8. Nutrition and Transport in Flowering Plants
+  {topic:"8. Nutrition & Transport in Plants", prompt:"State the functions of xylem and phloem.",
+   keywords:[["xylem"],["water","minerals","mineral ions"],["phloem"],["food","sucrose"]],
+   model:"Xylem transports water and mineral ions upward from the roots; phloem transports food (mainly sucrose) up and down the plant."},
+  {topic:"8. Nutrition & Transport in Plants", prompt:"Explain how a root hair cell is suited to water and ion uptake.",
+   keywords:[["large surface area","surface area"],["absorption","uptake","absorb"]],
+   model:"A root hair cell has a large surface area of cell membrane, which increases the rate of water and ion absorption."},
+  {topic:"8. Nutrition & Transport in Plants", prompt:"State the word equation for photosynthesis.",
+   keywords:[["carbon dioxide"],["water"],["glucose"],["oxygen"],["light"]],
+   model:"Carbon dioxide + water --(light energy, chlorophyll)--> glucose + oxygen."},
+  {topic:"8. Nutrition & Transport in Plants", prompt:"Define transpiration.",
+   keywords:[["loss of water","water vapour","water vapor"],["stomata"]],
+   model:"The loss of water vapour from a plant, mainly through the stomata."},
+  {topic:"8. Nutrition & Transport in Plants", prompt:"Explain transpiration pull.",
+   keywords:[["evaporates","evaporation"],["tension","pull"],["xylem"]],
+   model:"As water evaporates from cells in the leaf, it creates tension that pulls water upward through the xylem from the roots."},
+  {topic:"8. Nutrition & Transport in Plants", prompt:"Define translocation.",
+   keywords:[["transport of food","sucrose"],["phloem"]],
+   model:"The transport of food (mainly sucrose) through the phloem tissue."}
+];
+
+const topicSelect = document.getElementById('topicSelect');
+const promptText = document.getElementById('promptText');
+const answerInput = document.getElementById('answerInput');
+const feedback = document.getElementById('feedback');
+const tally = document.getElementById('tally');
+const tagsEl = document.getElementById('tags');
+const modelText = document.getElementById('modelText');
+const slip = document.getElementById('slip');
+const scoreAnswered = document.getElementById('scoreAnswered');
+const scoreAvg = document.getElementById('scoreAvg');
+
+let pool = [...QUESTIONS];
+let current = null;
+let answeredCount = 0;
+let hitRateSum = 0;
+
+const topics = ["All topics", ...new Set(QUESTIONS.map(q => q.topic))];
+topics.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t;
+  opt.textContent = t;
+  topicSelect.appendChild(opt);
+});
+
+function filteredPool(){
+  const t = topicSelect.value;
+  return t === "All topics" ? QUESTIONS : QUESTIONS.filter(q => q.topic === t);
+}
+
+function pickQuestion(){
+  const p = filteredPool();
+  current = p[Math.floor(Math.random() * p.length)];
+  const idxInTopic = QUESTIONS.filter(q => q.topic === current.topic).indexOf(current) + 1;
+  const totalInTopic = QUESTIONS.filter(q => q.topic === current.topic).length;
+  slip.setAttribute('data-tag', `SPECIMEN ${String(idxInTopic).padStart(2,'0')} / ${totalInTopic} — SEC. ${current.topic.split('.')[0]}`);
+  promptText.textContent = current.prompt;
+  answerInput.value = "";
+  feedback.classList.remove('show');
+}
+
+function normalize(s){
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function checkAnswer(){
+  const ans = normalize(answerInput.value);
+  if(!ans){
+    answerInput.focus();
+    return;
+  }
+  let hits = 0;
+  tagsEl.innerHTML = "";
+  current.keywords.forEach(group => {
+    const found = group.some(term => ans.includes(normalize(term)));
+    if(found) hits++;
+    const chip = document.createElement('span');
+    chip.className = 'tag ' + (found ? 'hit' : 'miss');
+    chip.textContent = group[0];
+    tagsEl.appendChild(chip);
+  });
+  const total = current.keywords.length;
+  tally.textContent = `${hits} / ${total} key ideas found`;
+  modelText.textContent = current.model;
+  feedback.classList.add('show');
+
+  answeredCount++;
+  hitRateSum += hits / total;
+  scoreAnswered.textContent = answeredCount;
+  scoreAvg.textContent = Math.round((hitRateSum / answeredCount) * 100) + '%';
+}
+
+document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+document.getElementById('nextBtn').addEventListener('click', pickQuestion);
+document.getElementById('shuffleBtn').addEventListener('click', pickQuestion);
+document.getElementById('revealBtn').addEventListener('click', () => {
+  modelText.textContent = current.model;
+  tally.textContent = "Model answer";
+  tagsEl.innerHTML = "";
+  current.keywords.forEach(group => {
+    const chip = document.createElement('span');
+    chip.className = 'tag hit';
+    chip.textContent = group[0];
+    tagsEl.appendChild(chip);
+  });
+  feedback.classList.add('show');
+});
+topicSelect.addEventListener('change', pickQuestion);
+answerInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && e.metaKey || e.key === 'Enter' && e.ctrlKey){
+    checkAnswer();
+  }
+});
+
+pickQuestion();
+</script>
+</body>
+</html>

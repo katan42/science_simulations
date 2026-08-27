@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reactivity Rumble</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body style="margin:0;">
+<div id="root"></div>
+<script type="text/babel" data-type="module">
+const { useState, useRef } = React;
+
+function Icon({ children, className, style, viewBox = '0 0 24 24' }) {
+  return (
+    <svg className={className} style={style} viewBox={viewBox} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  );
+}
+const Droplet = (p) => <Icon {...p}><path d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z" /></Icon>;
+const Flame = (p) => <Icon {...p}><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-1-2-1-3 2 1 3 3 3 5a5 5 0 0 1-10 0c0-5 3-7 5-11z" /></Icon>;
+const FlaskConical = (p) => <Icon {...p}><path d="M9 3h6M10 3v5l-5.2 9a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 8V3" /></Icon>;
+const Trophy = (p) => <Icon {...p}><path d="M6 4h12v3a6 6 0 0 1-12 0V4z" /><path d="M9 17h6" /><path d="M12 13v4" /><path d="M6 6H4.5A2.5 2.5 0 0 0 6 10.5" /><path d="M18 6h1.5A2.5 2.5 0 0 1 18 10.5" /></Icon>;
+const Zap = (p) => <Icon {...p}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" /></Icon>;
+const CheckCircle2 = (p) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M8 12l3 3 5-6" /></Icon>;
+const XCircle = (p) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5l5 5M14.5 9.5l-5 5" /></Icon>;
+const RotateCcw = (p) => <Icon {...p}><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></Icon>;
+const Play = (p) => <Icon {...p}><path d="M6 4l14 8-14 8V4z" /></Icon>;
+const ArrowUp = (p) => <Icon {...p}><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></Icon>;
+const Check = (p) => <Icon {...p}><path d="M5 12l4 4 10-10" /></Icon>;
+const Minus = (p) => <Icon {...p}><path d="M5 12h14" /></Icon>;
+const Volume2 = (p) => <Icon {...p}><path d="M4 9v6h4l5 5V4L8 9H4z" /><path d="M17 8a5 5 0 0 1 0 8" /><path d="M19.5 5.5a9 9 0 0 1 0 13" /></Icon>;
+const VolumeX = (p) => <Icon {...p}><path d="M4 9v6h4l5 5V4L8 9H4z" /><path d="M17 9l6 6M23 9l-6 6" /></Icon>;
+
+const FONT_IMPORT = `@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');`;
+const DISPLAY_FONT = "'Oswald', sans-serif";
+const MONO_FONT = "'IBM Plex Mono', monospace";
+
+const COLORS = {
+  bg: '#14171A',
+  panel: '#1E2329',
+  panelLine: '#2A3038',
+  steel: '#C7D0D9',
+  water: '#3E92CC',
+  steam: '#E8763C',
+  acid: '#9CCC3C',
+  signal: '#E5484D',
+};
+
+const METALS = [
+  { symbol: 'K', name: 'Potassium', reactsFrom: 'water' },
+  { symbol: 'Na', name: 'Sodium', reactsFrom: 'water' },
+  { symbol: 'Ca', name: 'Calcium', reactsFrom: 'water' },
+  { symbol: 'Mg', name: 'Magnesium', reactsFrom: 'water' },
+  { symbol: 'Zn', name: 'Zinc', reactsFrom: 'steam' },
+  { symbol: 'Fe', name: 'Iron', reactsFrom: 'steam' },
+  { symbol: 'Pb', name: 'Lead', reactsFrom: 'acid' },
+  { symbol: 'Cu', name: 'Copper', reactsFrom: 'none' },
+  { symbol: 'Ag', name: 'Silver', reactsFrom: 'none' },
+  { symbol: 'Au', name: 'Gold', reactsFrom: 'none' },
+];
+
+const REAGENT_TIER = { water: 0, steam: 1, acid: 2 };
+
+const REAGENTS = {
+  water: { label: 'Cold Water', short: 'H₂O · cold', color: COLORS.water, Icon: Droplet },
+  steam: { label: 'Steam', short: 'H₂O · steam', color: COLORS.steam, Icon: Flame },
+  acid: { label: 'Dilute HCl', short: 'dilute HCl', color: COLORS.acid, Icon: FlaskConical },
+};
+
+const QUESTIONS = [
+  { metal: 'K', reagent: 'water', reacts: true, equation: '2K + 2H{2}O → 2KOH + H{2}',
+    distractors: ['K + H{2}O → KOH + H{2}', '2K + 2H{2}O → 2KOH + 2H{2}'],
+    note: 'Reacts violently even in cold water — the metal skids across the surface and may catch fire.' },
+  { metal: 'K', reagent: 'acid', reacts: true, equation: '2K + 2HCl → 2KCl + H{2}',
+    distractors: ['K + HCl → KCl + H{2}', '2K + 2HCl → 2KCl + 2H{2}'],
+    note: 'Never actually tried in the lab — a Group 1 metal in acid is explosive.' },
+  { metal: 'Na', reagent: 'water', reacts: true, equation: '2Na + 2H{2}O → 2NaOH + H{2}',
+    distractors: ['Na + H{2}O → NaOH + H{2}', '2Na + 2H{2}O → 2NaOH + 2H{2}'],
+    note: 'Fizzes and darts across the surface, sometimes melting into a silver ball from the heat.' },
+  { metal: 'Na', reagent: 'acid', reacts: true, equation: '2Na + 2HCl → 2NaCl + H{2}',
+    distractors: ['Na + HCl → NaCl + H{2}', '2Na + 2HCl → 2NaCl + 2H{2}'],
+    note: 'Chemically valid, but same explosion risk as sodium in water — a paper answer only.' },
+  { metal: 'Ca', reagent: 'water', reacts: true, equation: 'Ca + 2H{2}O → Ca(OH){2} + H{2}',
+    distractors: ['Ca + H{2}O → CaOH + H{2}', '2Ca + 2H{2}O → 2Ca(OH){2} + H{2}'],
+    note: 'Steady bubbling; the water turns cloudy as calcium hydroxide (limewater) forms.' },
+  { metal: 'Ca', reagent: 'acid', reacts: true, equation: 'Ca + 2HCl → CaCl{2} + H{2}',
+    distractors: ['Ca + HCl → CaCl + H{2}', 'Ca + 2HCl → CaCl{2} + 2H{2}'],
+    note: 'Vigorous fizzing — clearly faster than magnesium, but calmer than sodium.' },
+  { metal: 'Mg', reagent: 'water', reacts: true, equation: 'Mg + 2H{2}O → Mg(OH){2} + H{2}',
+    distractors: ['Mg + H{2}O → MgO + H{2}', '2Mg + 2H{2}O → 2Mg(OH){2} + H{2}'],
+    note: 'So slow you\u2019ll only spot the odd bubble over several minutes.' },
+  { metal: 'Mg', reagent: 'steam', reacts: true, equation: 'Mg + H{2}O → MgO + H{2}',
+    distractors: ['Mg + 2H{2}O → Mg(OH){2} + H{2}', '2Mg + H{2}O → 2MgO + H{2}'],
+    note: 'With steam it speeds right up — magnesium glows white-hot, forming the oxide instead of the hydroxide.' },
+  { metal: 'Mg', reagent: 'acid', reacts: true, equation: 'Mg + 2HCl → MgCl{2} + H{2}',
+    distractors: ['Mg + HCl → MgCl + H{2}', 'Mg + 2HCl → MgCl{2} + 2H{2}'],
+    note: 'One of the most vigorous acid reactions here — rapid fizzing and a warm test tube.' },
+  { metal: 'Zn', reagent: 'water', reacts: false,
+    note: 'No visible reaction — zinc sits below carbon, so cold water can\u2019t touch it.' },
+  { metal: 'Zn', reagent: 'steam', reacts: true, equation: 'Zn + H{2}O → ZnO + H{2}',
+    distractors: ['Zn + 2H{2}O → Zn(OH){2} + H{2}', '2Zn + H{2}O → 2ZnO + H{2}'],
+    note: 'Needs the extra energy of steam — glowing zinc reacts to give zinc oxide.' },
+  { metal: 'Zn', reagent: 'acid', reacts: true, equation: 'Zn + 2HCl → ZnCl{2} + H{2}',
+    distractors: ['Zn + HCl → ZnCl + H{2}', 'Zn + 2HCl → ZnCl{2} + 2H{2}'],
+    note: 'The classic metal-plus-acid demo — a steady, gentle stream of bubbles.' },
+  { metal: 'Fe', reagent: 'water', reacts: false,
+    note: 'No reaction with cold water. Rusting needs water AND oxygen together — a separate process.' },
+  { metal: 'Fe', reagent: 'steam', reacts: true, equation: '3Fe + 4H{2}O → Fe{3}O{4} + 4H{2}',
+    distractors: ['Fe + H{2}O → FeO + H{2}', '2Fe + 3H{2}O → Fe{2}O{3} + 3H{2}'],
+    note: 'The trickiest one to balance — produces the mixed oxide Fe₃O₄.' },
+  { metal: 'Fe', reagent: 'acid', reacts: true, equation: 'Fe + 2HCl → FeCl{2} + H{2}',
+    distractors: ['Fe + 3HCl → FeCl{3} + H{2}', '2Fe + 2HCl → 2FeCl{2} + H{2}'],
+    note: 'Fizzes more slowly than zinc — gives a pale green iron(II) chloride solution.' },
+  { metal: 'Pb', reagent: 'water', reacts: false,
+    note: 'No reaction — lead sits well below carbon in the series.' },
+  { metal: 'Pb', reagent: 'steam', reacts: false,
+    note: 'Still nothing — lead needs the stronger conditions of acid before it reacts at all.' },
+  { metal: 'Pb', reagent: 'acid', reacts: true, equation: 'Pb + 2HCl → PbCl{2} + H{2}',
+    distractors: ['Pb + HCl → PbCl + H{2}', 'Pb + 2HCl → PbCl{2} + 2H{2}'],
+    note: 'The slowest reaction on the list — an insoluble PbCl₂ coating forms and shuts it down fast.' },
+  { metal: 'Cu', reagent: 'water', reacts: false,
+    note: 'No reaction — copper sits below hydrogen and is far too unreactive to touch cold water.' },
+  { metal: 'Cu', reagent: 'steam', reacts: false,
+    note: 'No reaction — even the extra energy in steam isn\u2019t enough to shift copper.' },
+  { metal: 'Cu', reagent: 'acid', reacts: false,
+    note: 'No reaction — copper can\u2019t displace hydrogen from dilute acid, which is exactly why it\u2019s safe for pipes and wiring.' },
+  { metal: 'Ag', reagent: 'water', reacts: false,
+    note: 'No reaction — silver is even less reactive than copper.' },
+  { metal: 'Ag', reagent: 'steam', reacts: false,
+    note: 'No reaction — steam leaves silver completely unaffected.' },
+  { metal: 'Ag', reagent: 'acid', reacts: false,
+    note: 'No reaction — dilute acids don\u2019t touch silver, part of why it stays untarnished in jewellery.' },
+  { metal: 'Au', reagent: 'water', reacts: false,
+    note: 'No reaction — gold is the least reactive metal on this list.' },
+  { metal: 'Au', reagent: 'steam', reacts: false,
+    note: 'No reaction — gold resists steam entirely.' },
+  { metal: 'Au', reagent: 'acid', reacts: false,
+    note: 'No reaction — not even dilute acid touches gold; only special mixtures like aqua regia can dissolve it.' },
+];
+
+const VOCAB_QUESTIONS = [
+  { reagent: 'water', vigor: 'very violently', answer: 'Potassium', distractors: ['Sodium', 'Calcium', 'Magnesium'],
+    note: 'Potassium skids across cold water and gives off enough heat to ignite the hydrogen — the most dramatic of the four.' },
+  { reagent: 'water', vigor: 'violently', answer: 'Sodium', distractors: ['Potassium', 'Calcium', 'Magnesium'],
+    note: 'A notch calmer than potassium, but sodium still fizzes fast and may catch fire.' },
+  { reagent: 'water', vigor: 'readily', answer: 'Calcium', distractors: ['Potassium', 'Sodium', 'Magnesium'],
+    note: 'Steady, visible bubbling — calcium turns the water cloudy as it forms limewater.' },
+  { reagent: 'water', vigor: 'very slowly', answer: 'Magnesium', distractors: ['Calcium', 'Zinc', 'Iron'],
+    note: 'Only the odd bubble appears, even after a few days.' },
+  { reagent: 'steam', vigor: 'explodes', answer: 'Potassium, Sodium & Calcium', distractors: ['Magnesium', 'Zinc', 'Iron'],
+    note: 'Too dangerous to demonstrate directly — their reaction with steam is inferred from how fiercely they already react with cold water.' },
+  { reagent: 'steam', vigor: 'violently', answer: 'Magnesium', distractors: ['Zinc', 'Iron', 'Calcium'],
+    note: 'Magnesium burns with a bright white glow in steam, forming white magnesium oxide.' },
+  { reagent: 'steam', vigor: 'readily', answer: 'Zinc', distractors: ['Magnesium', 'Iron', 'Lead'],
+    note: 'Hot zinc reacts steadily — the oxide formed is yellow while hot, white once cool.' },
+  { reagent: 'steam', vigor: 'slowly', answer: 'Iron', distractors: ['Zinc', 'Magnesium', 'Lead'],
+    note: 'Needs to be kept red-hot and constantly heated for the reaction to keep going.' },
+  { reagent: 'acid', vigor: 'explosively', answer: 'Potassium & Sodium', distractors: ['Calcium', 'Magnesium', 'Zinc'],
+    note: 'Never attempted in the school lab — the same danger as with water, just faster.' },
+  { reagent: 'acid', vigor: 'violently', answer: 'Calcium', distractors: ['Magnesium', 'Zinc', 'Iron'],
+    note: 'Rapid, vigorous fizzing — faster than magnesium, calmer than sodium.' },
+  { reagent: 'acid', vigor: 'rapidly', answer: 'Magnesium', distractors: ['Calcium', 'Zinc', 'Iron'],
+    note: 'One of the fastest reactions commonly demonstrated with dilute acid.' },
+  { reagent: 'acid', vigor: 'moderately fast', answer: 'Zinc', distractors: ['Magnesium', 'Iron', 'Lead'],
+    note: 'The classic metal-plus-acid demo — a steady, gentle stream of bubbles.' },
+  { reagent: 'acid', vigor: 'slowly', answer: 'Iron', distractors: ['Zinc', 'Lead', 'Magnesium'],
+    note: 'Noticeably slower than zinc — gives a pale green iron(II) chloride solution.' },
+];
+
+const ALL_QUESTIONS = [
+  ...QUESTIONS.map((q) => ({ ...q, kind: 'reaction' })),
+  ...VOCAB_QUESTIONS.map((q) => ({ ...q, kind: 'vocab' })),
+];
+
+function formatFormula(str) {
+  const parts = str.split(/\{(\d+)\}/);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <sub key={i}>{part}</sub> : <span key={i}>{part}</span>
+  );
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function metalOf(symbol) {
+  return METALS.find((m) => m.symbol === symbol);
+}
+
+function ReactivityGauge({ activeSymbol }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 py-2 px-1 shrink-0">
+      <ArrowUp className="w-3 h-3" style={{ color: COLORS.signal }} />
+      <span
+        className="text-[8px] tracking-widest mb-1 select-none"
+        style={{ writingMode: 'vertical-rl', color: COLORS.signal, fontFamily: DISPLAY_FONT }}
+      >
+        MORE REACTIVE
+      </span>
+      {METALS.map((m) => {
+        const active = m.symbol === activeSymbol;
+        return (
+          <div
+            key={m.symbol}
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-sm flex items-center justify-center text-[10px] sm:text-[11px] font-semibold border transition-all duration-300 motion-reduce:transition-none"
+            style={{
+              fontFamily: MONO_FONT,
+              backgroundColor: active ? COLORS.signal : COLORS.panel,
+              borderColor: active ? COLORS.signal : COLORS.panelLine,
+              color: active ? '#fff' : `${COLORS.steel}99`,
+              transform: active ? 'scale(1.12)' : 'scale(1)',
+              boxShadow: active ? `0 0 12px ${COLORS.signal}` : 'none',
+            }}
+          >
+            {m.symbol}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RecapTable() {
+  const cell = (metal, reagentId) => {
+    const reacts = metal.reactsFrom !== 'none' && REAGENT_TIER[reagentId] >= REAGENT_TIER[metal.reactsFrom];
+    return reacts ? (
+      <div
+        className="w-full h-full flex items-center justify-center rounded-sm"
+        style={{ backgroundColor: `${COLORS.signal}33`, border: `1px solid ${COLORS.signal}` }}
+      >
+        <Check className="w-3.5 h-3.5" style={{ color: COLORS.signal }} />
+      </div>
+    ) : (
+      <Minus className="w-3 h-3 mx-auto opacity-20" />
+    );
+  };
+  return (
+    <div className="w-full overflow-x-auto">
+      <table className="w-full border-collapse text-[10px] sm:text-xs">
+        <thead>
+          <tr>
+            <th className="text-left font-normal pb-1.5" style={{ color: `${COLORS.steel}99` }}></th>
+            {['water', 'steam', 'acid'].map((r) => (
+              <th key={r} className="pb-1.5 font-medium whitespace-nowrap" style={{ color: REAGENTS[r].color, fontFamily: DISPLAY_FONT }}>
+                {REAGENTS[r].label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {METALS.map((m) => (
+            <tr key={m.symbol} className="border-t" style={{ borderColor: COLORS.panelLine }}>
+              <td className="py-1.5 pr-3 font-medium whitespace-nowrap" style={{ color: COLORS.steel }}>
+                {m.name} <span style={{ fontFamily: MONO_FONT, color: `${COLORS.steel}99` }}>({m.symbol})</span>
+              </td>
+              {['water', 'steam', 'acid'].map((r) => (
+                <td key={r} className="py-1.5 px-1 h-7">
+                  {cell(m, r)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function useAudio() {
+  const ctxRef = useRef(null);
+  const ambientRef = useRef(null);
+
+  function getCtx() {
+    if (!ctxRef.current) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ctxRef.current = new AC();
+    }
+    if (ctxRef.current.state === 'suspended') ctxRef.current.resume();
+    return ctxRef.current;
+  }
+
+  function playTone(freq, start, duration, type, gainPeak) {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    const t0 = ctx.currentTime + start;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(gainPeak, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.05);
+  }
+
+  function playCorrect() {
+    playTone(523.25, 0, 0.14, 'sine', 0.16);
+    playTone(659.25, 0.08, 0.14, 'sine', 0.16);
+    playTone(783.99, 0.16, 0.22, 'sine', 0.16);
+  }
+
+  function playWrong() {
+    playTone(196.0, 0, 0.22, 'triangle', 0.14);
+    playTone(146.83, 0.12, 0.3, 'triangle', 0.14);
+  }
+
+  const CHORDS = [
+    [110.0, 130.81, 164.81, 196.0], // Am7
+    [87.31, 110.0, 130.81, 164.81], // Fmaj7
+    [130.81, 164.81, 196.0, 246.94], // Cmaj7
+    [98.0, 123.47, 146.83, 174.61], // G7
+  ];
+  const ARP_PATTERN = [0, 2, 1, 3, 0, 2, 1, 3];
+  const STEP_DUR = 0.36;
+
+  function startAmbient() {
+    if (ambientRef.current) return;
+    const ctx = getCtx();
+    const master = ctx.createGain();
+    master.gain.value = 0.0001;
+    master.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 1);
+    master.connect(ctx.destination);
+
+    let step = 0;
+
+    function playStep() {
+      const chordIdx = Math.floor(step / 8) % CHORDS.length;
+      const chord = CHORDS[chordIdx];
+      const noteIdx = ARP_PATTERN[step % 8];
+      const freq = chord[noteIdx];
+      const t0 = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(1, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + STEP_DUR * 0.9);
+      osc.connect(g).connect(master);
+      osc.start(t0);
+      osc.stop(t0 + STEP_DUR);
+
+      if (step % 2 === 0) {
+        const shimmer = ctx.createOscillator();
+        const gs = ctx.createGain();
+        shimmer.type = 'sine';
+        shimmer.frequency.value = freq * 2;
+        gs.gain.setValueAtTime(0.0001, t0);
+        gs.gain.linearRampToValueAtTime(0.3, t0 + 0.01);
+        gs.gain.exponentialRampToValueAtTime(0.0001, t0 + STEP_DUR * 0.6);
+        shimmer.connect(gs).connect(master);
+        shimmer.start(t0);
+        shimmer.stop(t0 + STEP_DUR * 0.6);
+      }
+
+      if (step % 8 === 0) {
+        const bass = ctx.createOscillator();
+        const gb = ctx.createGain();
+        bass.type = 'sine';
+        bass.frequency.value = chord[0] / 2;
+        gb.gain.setValueAtTime(0.0001, t0);
+        gb.gain.linearRampToValueAtTime(0.55, t0 + 0.3);
+        gb.gain.exponentialRampToValueAtTime(0.0001, t0 + STEP_DUR * 8 * 0.95);
+        bass.connect(gb).connect(master);
+        bass.start(t0);
+        bass.stop(t0 + STEP_DUR * 8);
+      }
+
+      step = (step + 1) % (CHORDS.length * 8);
+    }
+
+    playStep();
+    const intervalId = setInterval(playStep, STEP_DUR * 1000);
+    ambientRef.current = { intervalId, master };
+  }
+
+  function stopAmbient() {
+    if (!ambientRef.current) return;
+    const { intervalId, master } = ambientRef.current;
+    clearInterval(intervalId);
+    const ctx = ctxRef.current;
+    if (ctx) master.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.2);
+    setTimeout(() => {
+      try {
+        master.disconnect();
+      } catch (e) {}
+    }, 500);
+    ambientRef.current = null;
+  }
+
+  return { playCorrect, playWrong, startAmbient, stopAmbient };
+}
+
+function ReactivityRumble() {
+  const [phase, setPhase] = useState('start');
+  const [deck, setDeck] = useState([]);
+  const [qIndex, setQIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [predicted, setPredicted] = useState(null);
+  const [mcqChoice, setMcqChoice] = useState(null);
+  const [mcqOptions, setMcqOptions] = useState([]);
+  const [vocabChoice, setVocabChoice] = useState(null);
+  const [vocabOptions, setVocabOptions] = useState([]);
+  const [lastCorrect, setLastCorrect] = useState(null);
+  const [muted, setMuted] = useState(false);
+  const audio = useAudio();
+
+  function toggleSound() {
+    setMuted((m) => {
+      const next = !m;
+      const activePhase = ['predicting', 'mcq', 'vocab-choice', 'feedback'].includes(phase);
+      if (next) audio.stopAmbient();
+      else if (activePhase) audio.startAmbient();
+      return next;
+    });
+  }
+
+  const currentQ = deck[qIndex];
+  const maxScore = ALL_QUESTIONS.reduce(
+    (sum, q) => sum + (q.kind === 'vocab' ? 15 : q.reacts ? 25 : 10),
+    0
+  );
+
+  function beginRound(q) {
+    if (q.kind === 'vocab') {
+      setVocabOptions(shuffle([q.answer, ...q.distractors]));
+      setPhase('vocab-choice');
+    } else {
+      setPhase('predicting');
+    }
+  }
+
+  function startGame() {
+    const shuffled = shuffle(ALL_QUESTIONS);
+    setDeck(shuffled);
+    setQIndex(0);
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setPredicted(null);
+    setMcqChoice(null);
+    setVocabChoice(null);
+    if (!muted) audio.startAmbient();
+    beginRound(shuffled[0]);
+  }
+
+  function bumpStreak() {
+    setStreak((s) => {
+      const n = s + 1;
+      setBestStreak((b) => Math.max(b, n));
+      return n;
+    });
+  }
+
+  function handlePredict(choice) {
+    setPredicted(choice);
+    if (currentQ.reacts && choice === 'react') {
+      setMcqOptions(shuffle([currentQ.equation, ...currentQ.distractors]));
+      setScore((s) => s + 10);
+      if (!muted) audio.playCorrect();
+      setPhase('mcq');
+      return;
+    }
+    const correct = (choice === 'react') === currentQ.reacts;
+    if (correct) {
+      setScore((s) => s + 10);
+      bumpStreak();
+      if (!muted) audio.playCorrect();
+    } else {
+      setStreak(0);
+      if (!muted) audio.playWrong();
+    }
+    setLastCorrect(correct);
+    setPhase('feedback');
+  }
+
+  function handleMcq(choice) {
+    setMcqChoice(choice);
+    const correct = choice === currentQ.equation;
+    if (correct) {
+      setScore((s) => s + 15);
+      bumpStreak();
+      if (!muted) audio.playCorrect();
+    } else {
+      setStreak(0);
+      if (!muted) audio.playWrong();
+    }
+    setLastCorrect(correct);
+    setPhase('feedback');
+  }
+
+  function handleVocab(choice) {
+    setVocabChoice(choice);
+    const correct = choice === currentQ.answer;
+    if (correct) {
+      setScore((s) => s + 15);
+      bumpStreak();
+      if (!muted) audio.playCorrect();
+    } else {
+      setStreak(0);
+      if (!muted) audio.playWrong();
+    }
+    setLastCorrect(correct);
+    setPhase('feedback');
+  }
+
+  function nextQuestion() {
+    if (qIndex + 1 >= deck.length) {
+      audio.stopAmbient();
+      setPhase('summary');
+    } else {
+      const nextIdx = qIndex + 1;
+      setQIndex(nextIdx);
+      setPredicted(null);
+      setMcqChoice(null);
+      setMcqOptions([]);
+      setVocabChoice(null);
+      setVocabOptions([]);
+      beginRound(deck[nextIdx]);
+    }
+  }
+
+  let title = 'Keep Practising';
+  if (deck.length) {
+    const pct = score / maxScore;
+    if (pct >= 0.9) title = 'Reactivity Rumble Champion';
+    else if (pct >= 0.7) title = 'Lab Veteran';
+    else if (pct >= 0.5) title = 'Reactivity Rookie';
+  }
+
+  const reagentInfo = currentQ ? REAGENTS[currentQ.reagent] : null;
+  const metalInfo = currentQ && currentQ.kind === 'reaction' ? metalOf(currentQ.metal) : null;
+
+  return (
+    <div className="min-h-screen w-full flex flex-col" style={{ backgroundColor: COLORS.bg, color: COLORS.steel }}>
+      <style>{FONT_IMPORT}</style>
+
+      <header className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: COLORS.panelLine }}>
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold tracking-wide" style={{ fontFamily: DISPLAY_FONT }}>
+            REACTIVITY RUMBLE
+          </h1>
+          <p className="text-[10px] tracking-widest uppercase" style={{ color: `${COLORS.steel}80` }}>
+            Equation Edition
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-xs sm:text-sm">
+          {phase !== 'start' && (
+            <>
+              <div className="flex items-center gap-1" style={{ color: streak >= 3 ? COLORS.steam : COLORS.steel }}>
+                <Zap className="w-4 h-4" />
+                <span style={{ fontFamily: MONO_FONT }}>{streak}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Trophy className="w-4 h-4" style={{ color: COLORS.acid }} />
+                <span style={{ fontFamily: MONO_FONT }}>{score}</span>
+              </div>
+            </>
+          )}
+          <button
+            onClick={toggleSound}
+            aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+            className="p-1 rounded-sm transition-transform active:scale-90 motion-reduce:transition-none"
+            style={{ color: `${COLORS.steel}99` }}
+          >
+            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-1 min-h-0">
+        {phase === 'predicting' || phase === 'mcq' || phase === 'vocab-choice' || phase === 'feedback' ? (
+          <ReactivityGauge activeSymbol={currentQ?.kind === 'reaction' ? currentQ.metal : undefined} />
+        ) : null}
+
+        <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto">
+          {phase === 'start' && (
+            <div className="max-w-sm w-full flex flex-col items-center text-center gap-6 mt-6">
+              <div className="w-full rounded-md p-5" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                <p className="text-sm leading-relaxed" style={{ color: `${COLORS.steel}CC` }}>
+                  10 metals. 3 reagents. Predict whether each matchup reacts, pick the
+                  balanced equation, and match the exact textbook wording — violently,
+                  explosively, readily — to the right metal.
+                </p>
+                <div className="flex justify-center gap-4 mt-4 text-[11px]" style={{ color: `${COLORS.steel}80` }}>
+                  <span>K · Na · Ca · Mg</span>
+                  <span style={{ color: COLORS.panelLine }}>|</span>
+                  <span>Zn · Fe · Pb</span>
+                  <span style={{ color: COLORS.panelLine }}>|</span>
+                  <span>Cu · Ag · Au</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <button
+                  onClick={startGame}
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-sm font-semibold text-sm tracking-wide transition-transform active:scale-95 motion-reduce:transition-none"
+                  style={{ backgroundColor: COLORS.signal, color: '#fff', fontFamily: DISPLAY_FONT }}
+                >
+                  <Play className="w-4 h-4" /> START RUMBLE
+                </button>
+                <button
+                  onClick={() => setPhase('reference')}
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-sm font-medium text-xs tracking-wide transition-transform active:scale-95 motion-reduce:transition-none"
+                  style={{ backgroundColor: 'transparent', border: `1px solid ${COLORS.panelLine}`, color: `${COLORS.steel}CC`, fontFamily: DISPLAY_FONT }}
+                >
+                  VIEW SUMMARY
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === 'reference' && (
+            <div className="w-full max-w-sm flex flex-col items-center gap-4 mt-4">
+              <div className="text-center">
+                <div className="text-base font-bold tracking-wide" style={{ fontFamily: DISPLAY_FONT }}>REACTIVITY SUMMARY</div>
+                <div className="text-[10px] mt-1 tracking-widest" style={{ color: `${COLORS.steel}66` }}>
+                  10 METALS · 3 REAGENTS
+                </div>
+              </div>
+              <div className="w-full rounded-md p-3" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                <RecapTable />
+              </div>
+              <p className="text-xs text-center leading-relaxed" style={{ color: `${COLORS.steel}80` }}>
+                K, Na, Ca, Mg react with cold water. Zn and Fe need steam. Pb reacts only with acid.
+                Cu, Ag and Au sit below hydrogen — no reaction with any of the three.
+              </p>
+              <button
+                onClick={() => setPhase('start')}
+                className="px-6 py-2.5 rounded-sm font-medium text-xs tracking-wide transition-transform active:scale-95 motion-reduce:transition-none"
+                style={{ backgroundColor: 'transparent', border: `1px solid ${COLORS.panelLine}`, color: `${COLORS.steel}CC`, fontFamily: DISPLAY_FONT }}
+              >
+                BACK
+              </button>
+            </div>
+          )}
+
+          {currentQ && currentQ.kind === 'reaction' && (phase === 'predicting' || phase === 'mcq' || phase === 'feedback') && (
+            <div className="w-full max-w-sm flex flex-col gap-4">
+              <div className="text-center text-[10px] tracking-widest" style={{ color: `${COLORS.steel}66` }}>
+                MATCHUP {qIndex + 1} / {deck.length}
+              </div>
+
+              <div className="rounded-md p-4 flex items-center justify-between" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                <div className="text-center flex-1">
+                  <div className="text-2xl font-bold" style={{ fontFamily: MONO_FONT }}>{metalInfo.symbol}</div>
+                  <div className="text-[10px]" style={{ color: `${COLORS.steel}80` }}>{metalInfo.name}</div>
+                </div>
+                <div className="text-xs font-semibold px-2" style={{ color: `${COLORS.steel}55`, fontFamily: DISPLAY_FONT }}>VS</div>
+                <div className="text-center flex-1">
+                  <reagentInfo.Icon className="w-6 h-6 mx-auto mb-1" style={{ color: reagentInfo.color }} />
+                  <div className="text-[10px]" style={{ color: `${COLORS.steel}80` }}>{reagentInfo.label}</div>
+                </div>
+              </div>
+
+              {phase === 'predicting' && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-center text-sm" style={{ color: `${COLORS.steel}CC` }}>
+                    Does {metalInfo.name.toLowerCase()} react with {reagentInfo.label.toLowerCase()}?
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handlePredict('react')}
+                      className="py-3 rounded-sm text-sm font-semibold transition-transform active:scale-95 motion-reduce:transition-none"
+                      style={{ backgroundColor: `${COLORS.signal}22`, border: `1px solid ${COLORS.signal}`, color: COLORS.signal }}
+                    >
+                      REACTS
+                    </button>
+                    <button
+                      onClick={() => handlePredict('no')}
+                      className="py-3 rounded-sm text-sm font-semibold transition-transform active:scale-95 motion-reduce:transition-none"
+                      style={{ backgroundColor: 'transparent', border: `1px solid ${COLORS.panelLine}`, color: `${COLORS.steel}CC` }}
+                    >
+                      NO REACTION
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {phase === 'mcq' && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-center text-sm" style={{ color: `${COLORS.steel}CC` }}>
+                    Correct — now pick the balanced equation:
+                  </p>
+                  {mcqOptions.map((opt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleMcq(opt)}
+                      className="text-left px-3 py-2.5 rounded-sm text-sm transition-transform active:scale-[0.98] motion-reduce:transition-none"
+                      style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}`, fontFamily: MONO_FONT }}
+                    >
+                      {formatFormula(opt)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {phase === 'feedback' && (
+                <div className="flex flex-col gap-3">
+                  <div
+                    className="flex items-center gap-2 justify-center py-2 rounded-sm text-sm font-semibold"
+                    style={{
+                      color: lastCorrect ? COLORS.acid : COLORS.signal,
+                      backgroundColor: lastCorrect ? `${COLORS.acid}18` : `${COLORS.signal}18`,
+                    }}
+                  >
+                    {lastCorrect ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    {lastCorrect ? 'Correct' : 'Not quite'}
+                  </div>
+
+                  {currentQ.reacts ? (
+                    <div className="rounded-sm px-3 py-3 text-center text-sm" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}`, fontFamily: MONO_FONT }}>
+                      {formatFormula(currentQ.equation)}
+                    </div>
+                  ) : (
+                    <div className="rounded-sm px-3 py-3 text-center text-sm font-medium" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                      No reaction
+                    </div>
+                  )}
+
+                  <p className="text-xs leading-relaxed text-center" style={{ color: `${COLORS.steel}99` }}>
+                    {currentQ.note}
+                  </p>
+
+                  <button
+                    onClick={nextQuestion}
+                    className="py-3 rounded-sm text-sm font-semibold tracking-wide transition-transform active:scale-95 motion-reduce:transition-none"
+                    style={{ backgroundColor: COLORS.signal, color: '#fff', fontFamily: DISPLAY_FONT }}
+                  >
+                    {qIndex + 1 >= deck.length ? 'SEE RESULTS' : 'NEXT MATCHUP'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentQ && currentQ.kind === 'vocab' && (phase === 'vocab-choice' || phase === 'feedback') && (
+            <div className="w-full max-w-sm flex flex-col gap-4">
+              <div className="text-center text-[10px] tracking-widest" style={{ color: `${COLORS.steel}66` }}>
+                MATCHUP {qIndex + 1} / {deck.length}
+              </div>
+
+              <div className="rounded-md p-4 flex flex-col items-center gap-1" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                <reagentInfo.Icon className="w-6 h-6 mb-1" style={{ color: reagentInfo.color }} />
+                <div className="text-[10px] tracking-widest uppercase" style={{ color: `${COLORS.steel}80` }}>{reagentInfo.label}</div>
+                <div className="text-base font-semibold mt-1" style={{ fontFamily: DISPLAY_FONT }}>
+                  "reacts {currentQ.vigor}"
+                </div>
+              </div>
+
+              {phase === 'vocab-choice' && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-center text-sm" style={{ color: `${COLORS.steel}CC` }}>
+                    Which metal(s) fit that description?
+                  </p>
+                  {vocabOptions.map((opt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleVocab(opt)}
+                      className="text-left px-3 py-2.5 rounded-sm text-sm font-medium transition-transform active:scale-[0.98] motion-reduce:transition-none"
+                      style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {phase === 'feedback' && (
+                <div className="flex flex-col gap-3">
+                  <div
+                    className="flex items-center gap-2 justify-center py-2 rounded-sm text-sm font-semibold"
+                    style={{
+                      color: lastCorrect ? COLORS.acid : COLORS.signal,
+                      backgroundColor: lastCorrect ? `${COLORS.acid}18` : `${COLORS.signal}18`,
+                    }}
+                  >
+                    {lastCorrect ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    {lastCorrect ? 'Correct' : 'Not quite'}
+                  </div>
+
+                  <div className="rounded-sm px-3 py-3 text-center text-sm font-medium" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                    {currentQ.answer}
+                  </div>
+
+                  <p className="text-xs leading-relaxed text-center" style={{ color: `${COLORS.steel}99` }}>
+                    {currentQ.note}
+                  </p>
+
+                  <button
+                    onClick={nextQuestion}
+                    className="py-3 rounded-sm text-sm font-semibold tracking-wide transition-transform active:scale-95 motion-reduce:transition-none"
+                    style={{ backgroundColor: COLORS.signal, color: '#fff', fontFamily: DISPLAY_FONT }}
+                  >
+                    {qIndex + 1 >= deck.length ? 'SEE RESULTS' : 'NEXT MATCHUP'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {phase === 'summary' && (
+            <div className="w-full max-w-sm flex flex-col items-center gap-5 mt-4">
+              <Trophy className="w-9 h-9" style={{ color: COLORS.acid }} />
+              <div className="text-center">
+                <div className="text-lg font-bold tracking-wide" style={{ fontFamily: DISPLAY_FONT }}>{title}</div>
+                <div className="text-xs mt-1" style={{ color: `${COLORS.steel}80` }}>
+                  {score} / {maxScore} pts · best streak {bestStreak}
+                </div>
+              </div>
+
+              <div className="w-full rounded-md p-3" style={{ backgroundColor: COLORS.panel, border: `1px solid ${COLORS.panelLine}` }}>
+                <div className="text-[10px] tracking-widest text-center mb-2" style={{ color: `${COLORS.steel}66` }}>
+                  QUICK REFERENCE
+                </div>
+                <RecapTable />
+              </div>
+
+              <button
+                onClick={startGame}
+                className="flex items-center gap-2 px-6 py-3 rounded-sm font-semibold text-sm tracking-wide transition-transform active:scale-95 motion-reduce:transition-none"
+                style={{ backgroundColor: COLORS.signal, color: '#fff', fontFamily: DISPLAY_FONT }}
+              >
+                <RotateCcw className="w-4 h-4" /> PLAY AGAIN
+              </button>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<ReactivityRumble />);
+
+
+</script>
+</body>
+</html>
