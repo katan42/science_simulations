@@ -39,23 +39,6 @@ Reactions of metals with water, steam and dilute acid, plus displacement — wor
 
 ---
 
-## 🔬 Biology Revision — Field Notebook
-
-Broad multiple-choice sweep across the syllabus. Best used early in revision, to find the weak topics before drilling them.
-
-**Students should be able to:**
-
-- Recognise correct definitions, structures and processes across all examinable topics.
-- Spot the common distractors — the near-miss answers that come up in exam options.
-- Identify which topics need more work, using the per-topic progress display.
-
-**How to play:**
-
-1. Pick a topic, or work through all of them in order.
-2. Answer each question by selecting one option; feedback is immediate, with a short explanation of why the correct answer is correct.
-3. The progress bar fills as you go and shows your score per topic, so gaps are visible at a glance.
-4. Retake any topic as many times as you like — question order changes each run.
-
 ## 🔬 Biology Revision — Specimen Bench
 
 The recall counterpart to the Field Notebook. Nothing to choose from — students have to produce the answer themselves, which is much closer to what the paper actually asks.
