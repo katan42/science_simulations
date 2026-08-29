@@ -41,7 +41,7 @@ Reactions of metals with water, steam and dilute acid, plus displacement — wor
 
 ## 🔬 Biology Revision — Specimen Bench
 
-The recall counterpart to the Field Notebook. Nothing to choose from — students have to produce the answer themselves, which is much closer to what the paper actually asks.
+Recall for selected biology topics
 
 **Students should be able to:**
 
