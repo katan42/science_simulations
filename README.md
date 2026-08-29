@@ -10,8 +10,8 @@ Small, self-contained browser activities for science. Each one is a single HTML 
 
 | Activity | Subject | Format | Focus |
 | :-- | :-- | :-- | :-- |
-| [**Reactivity Rumble**](https://katan42.github.io/science_simulations/chemistry-reactivity-rumble-2.html) | Chemistry | Equation selection + vocabulary match | Metal reactivity series |
-| [**Biology Revision**](https://katan42.github.io/science_simulations/biology-specimen-bench.html) | Biology | Open-ended recall | Whole-syllabus recall |
+| [**Reactivity Rumble**](https://katan42.github.io/science_simulations/ReactivityRumble-2.html) | Chemistry | Equation selection + vocabulary match | Metal reactivity series |
+| [**Biology Revision**](https://katan42.github.io/science_simulations/bio_revision_bench.html) | Biology | Open-ended recall | Whole-syllabus recall |
 | [**Chemical Formula Challenge**](https://katan42.github.io/science_simulations/chemistry-formula-game-3.html) | Chemistry | Timed formula writing | Ionic formulae |
 | [**IonQuest**](https://katan42.github.io/science_simulations/chemistry-ion-quest.html) | Chemistry | Grid puzzle | Ionic formulae |
 
